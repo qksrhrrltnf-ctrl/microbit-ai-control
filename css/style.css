@@ -1060,3 +1060,75 @@ body[data-mode="handpose"] #mappingBody tr td:first-child { width: 46px; text-al
   text-align: left;
   width: 90px !important;
 }
+
+/* ---------------------------------------------------------- 연결 준비 안내 */
+.ble-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: var(--line);
+  border-left-width: 7px;
+  border-left-color: var(--yellow);
+  border-radius: 12px;
+  background: var(--key-bg);
+  font-size: .88rem;
+  line-height: 1.55;
+  box-shadow: var(--hard-sm);
+}
+
+.ble-hint__mark {
+  flex: none;
+  font-family: var(--disp);
+  font-weight: 800;
+  font-size: .74rem;
+  padding: 1px 10px;
+  border: 2.5px solid var(--ink);
+  border-radius: 999px;
+  background: var(--yellow);
+  margin-top: 1px;
+}
+
+.ble-hint__body a { font-weight: 800; }
+
+/* 연결이 실패했을 때 — 같은 자리에서 원인을 짚어준다 */
+.ble-hint.is-urgent {
+  border-left-color: var(--red);
+  background: var(--warn-bg);
+  animation: hint-pop .3s ease;
+}
+
+.ble-hint.is-urgent .ble-hint__mark { background: var(--red); color: #fff; }
+
+@keyframes hint-pop {
+  0% { transform: translateY(-4px); }
+  60% { transform: translateY(2px); }
+  100% { transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ble-hint.is-urgent { animation: none; }
+}
+
+/* 반드시 읽어야 하는 카드 */
+.card--alert {
+  border-left-width: 9px;
+  border-left-color: var(--red);
+  background: var(--warn-bg);
+}
+
+/* 메뉴를 따라가는 경로 표시 */
+.path {
+  margin: 10px 0;
+  padding: 10px 13px;
+  background: var(--paper);
+  border: 2.5px solid var(--ink);
+  border-radius: 10px;
+  font-size: .86rem;
+  line-height: 1.7;
+  box-shadow: 2px 2px 0 var(--ink);
+}
+
+/* 앵커로 이동했을 때 상단 고정 바에 제목이 가리지 않도록 여백을 둔다 */
+section[id], .card[id], h2[id] { scroll-margin-top: 92px; }

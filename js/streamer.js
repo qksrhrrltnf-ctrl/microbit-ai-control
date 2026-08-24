@@ -415,7 +415,10 @@
   // ---------------------------------------------------------------- 초기화
   function init() {
     Core.mountFooter();
+    Core.mountBleHint();
     Core.checkEnvironment();
+
+    var connectedAt = 0;
 
     ble.on('status', function (s) {
       Core.setStatus($('bleStatus'), s.message,
@@ -425,6 +428,25 @@
       $('btnConnect').disabled = s.connected || s.state === 'connecting';
       $('btnDisconnect').disabled = !s.connected;
       Core.log(s.message, s.state === 'error' ? 'error' : 'info');
+
+      if (s.state === 'connected') {
+        connectedAt = Date.now();
+        var hint = $('bleHint');
+        if (hint) hint.classList.remove('is-urgent');
+      }
+
+      if (s.state === 'error') {
+        // 붙자마자 떨어지는 것은 페어링 설정이 꺼져 있을 때의 전형적인 증상
+        if (connectedAt && Date.now() - connectedAt < 5000) {
+          Core.flagBleHint('연결되자마자 끊어졌습니다. MakeCode <b>프로젝트 설정 → ' +
+            'No Pairing Required</b>가 꺼져 있을 때 이렇게 됩니다.');
+          Core.log('연결 직후 끊김 — No Pairing Required 설정을 확인해주세요.', 'warn');
+        } else if (!connectedAt) {
+          Core.flagBleHint('연결에 실패했습니다. micro:bit 전원과 블루투스 프로그램, ' +
+            'MakeCode <b>No Pairing Required</b> 설정을 확인해주세요.');
+        }
+        connectedAt = 0;
+      }
     });
 
     // 이 페이지의 본업: micro:bit가 보낸 줄을 그래프로

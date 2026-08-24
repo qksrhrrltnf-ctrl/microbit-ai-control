@@ -480,6 +480,8 @@
       });
     }
 
+    var connectedAt = 0;
+
     ble.on('status', function (s) {
       Core.setStatus(badge, s.message,
         s.state === 'connected' ? 'ok' :
@@ -491,14 +493,68 @@
 
       Core.log(s.message, s.state === 'error' ? 'error' : 'info');
 
-      // 예기치 않게 끊기면 진행 중인 인식도 멈춘다
-      if (s.state === 'error' && opts.onDrop) opts.onDrop();
+      if (s.state === 'connected') {
+        connectedAt = Date.now();
+        var hint = Core.$('bleHint');
+        if (hint) hint.classList.remove('is-urgent');
+      }
+
+      if (s.state === 'error') {
+        // 증상마다 원인이 다르므로 나눠서 안내한다
+        if (connectedAt && Date.now() - connectedAt < 5000) {
+          // 붙자마자 떨어지는 것은 페어링 설정이 꺼져 있을 때의 전형적인 증상
+          Core.flagBleHint('연결되자마자 끊어졌습니다. MakeCode <b>프로젝트 설정 → ' +
+            'No Pairing Required</b>가 꺼져 있을 때 이렇게 됩니다.');
+          Core.log('연결 직후 끊김 — No Pairing Required 설정을 확인해주세요.', 'warn');
+        } else if (!connectedAt) {
+          Core.flagBleHint('연결에 실패했습니다. micro:bit 전원과 블루투스 프로그램, ' +
+            'MakeCode <b>No Pairing Required</b> 설정을 확인해주세요.');
+        }
+        connectedAt = 0;
+        if (opts.onDrop) opts.onDrop();
+      }
     });
 
     ble.on('line', function (text) { Core.log('micro:bit  ->  ' + text, 'recv'); });
 
-    // 지원하지 않는 브라우저 안내
+    Core.mountBleHint();
     Core.checkEnvironment();
+  };
+
+  /**
+   * micro:bit 연결 카드에 준비 사항 안내를 넣는다.
+   * 이 설정을 놓쳐 연결이 안 되는 경우가 가장 많으므로, 문서가 아니라
+   * 연결 버튼 바로 옆에 항상 보이게 둔다.
+   */
+  Core.mountBleHint = function () {
+    var status = Core.$('bleStatus');
+    if (!status || Core.$('bleHint')) return;
+
+    // 기능 페이지는 모두 최상위에 있으므로 microbit/ 로 바로 간다
+    var hint = document.createElement('div');
+    hint.className = 'ble-hint';
+    hint.id = 'bleHint';
+    hint.innerHTML =
+      '<span class="ble-hint__mark">준비</span>' +
+      '<span class="ble-hint__body">micro:bit에 블루투스 프로그램을 넣고, MakeCode ' +
+      '<b>프로젝트 설정 → No Pairing Required</b>를 켜야 연결됩니다. ' +
+      '<a href="microbit/#setup">설정 방법 보기</a></span>';
+
+    var row = status.parentNode;
+    row.parentNode.insertBefore(hint, row.nextSibling);
+  };
+
+  /** 연결이 실패했을 때 안내를 눈에 띄게 바꾼다 */
+  Core.flagBleHint = function (message) {
+    var hint = Core.$('bleHint');
+    if (!hint) return;
+    hint.classList.add('is-urgent');
+    var body = hint.querySelector('.ble-hint__body');
+    if (body) {
+      body.innerHTML = message +
+        ' <a href="microbit/#setup">해결 방법 보기</a>';
+    }
+    hint.querySelector('.ble-hint__mark').textContent = '확인';
   };
 
   /** Web Bluetooth 지원 여부를 확인해 #envWarning에 안내를 넣는다 */
