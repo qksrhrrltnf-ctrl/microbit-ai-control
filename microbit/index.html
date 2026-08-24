@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>micro:bit 코드 — micro:bit AI 제어</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body class="page-microbit">
+
+<header class="topbar">
+  <a class="topbar__brand" href="../index.html"><span class="topbar__dot"></span>micro:bit AI 제어</a>
+  <span class="topbar__title">micro:bit 코드</span>
+  <span class="topbar__spacer"></span>
+  <nav>
+    <a href="../image.html">이미지</a>
+    <a href="../pose.html">포즈</a>
+    <a href="./" aria-current="page">micro:bit 코드</a>
+  </nav>
+</header>
+
+<div class="wrap" style="max-width:840px">
+
+  <section class="card reveal">
+    <h2>통신 규약</h2>
+    <p class="card__hint">웹앱이 micro:bit로 보내는 것은 <b>줄바꿈으로 끝나는 짧은 문자열</b> 하나뿐입니다.</p>
+    <pre class="code">rock\n
+paper\n
+stop\n</pre>
+    <ul>
+      <li>클래스를 인식하면 <b>매핑 표에서 정한 명령어</b>가 전송됩니다.</li>
+      <li>인식을 중지하면 항상 <code>stop</code>이 전송됩니다. 이때 모터를 멈추도록 만들어 두세요.</li>
+      <li>UART 한 번에 보낼 수 있는 크기는 20바이트입니다. 명령어는 짧은 영문·숫자로 지으세요.</li>
+      <li>블루투스 서비스 UUID는 micro:bit 표준 UART 서비스(<code>6E400001-B5A3-F393-E0A9-E50E24DCCA9E</code>)입니다.</li>
+    </ul>
+  </section>
+
+  <section class="card reveal">
+    <h2>먼저 확인할 프로젝트 설정</h2>
+    <p class="card__hint">이 두 가지를 놓치면 연결이 안 됩니다. 수업 전에 꼭 확인하세요.</p>
+    <ol class="steps">
+      <li>MakeCode에서 <b>⚙️ 설정 → 프로젝트 설정</b>을 열고
+        <b>&ldquo;No Pairing Required: Anyone can connect via Bluetooth&rdquo;</b>를 <b>켭니다.</b>
+        (이걸 끄면 매번 페어링을 해야 해서 수업 진행이 어렵습니다)</li>
+      <li><b>무선(Radio) 블록을 함께 쓸 수 없습니다.</b> 블루투스와 무선은 동시에 사용할 수 없으니
+        프로젝트에서 무선 블록을 모두 지워주세요.</li>
+    </ol>
+    <div class="keybox">
+      micro:bit <b>v1</b>은 메모리가 작아 블루투스 + 확장 블록을 여러 개 쓰면 다운로드가 실패할 수 있습니다.
+      가능하면 <b>v2</b>를 권장합니다.
+    </div>
+  </section>
+
+  <section class="card reveal">
+    <h2>예제 1 — 기본 수신 (LED로 확인)</h2>
+    <p class="card__hint">
+      MakeCode에서 <b>JavaScript</b> 탭으로 바꾼 뒤 아래 코드를 통째로 붙여넣으면 블록으로도 바뀝니다.
+      제일 먼저 이걸로 연결이 되는지 확인하세요.
+    </p>
+    <pre class="code" data-copy>bluetooth.onUartDataReceived(serial.delimiters(Delimiters.NewLine), function () {
+    let command = bluetooth.uartReadUntil(serial.delimiters(Delimiters.NewLine))
+
+    if (command == "rock") {
+        basic.showIcon(IconNames.Heart)
+    } else if (command == "paper") {
+        basic.showIcon(IconNames.Square)
+    } else if (command == "scissors") {
+        basic.showIcon(IconNames.Scissors)
+    } else if (command == "stop") {
+        basic.clearScreen()
+    } else {
+        basic.showString(command)
+    }
+})
+
+bluetooth.startUartService()
+basic.showString("BT")</pre>
+    <div class="keybox">
+      맨 아래 <code>else</code> 덕분에 <b>어떤 명령이 오는지 LED에 그대로 표시</b>됩니다.
+      매핑을 확인할 때 아주 유용합니다.
+    </div>
+  </section>
+
+  <section class="card reveal">
+    <h2>예제 2 — 모터 제어 (로봇 움직이기)</h2>
+    <p class="card__hint">인식 결과로 바퀴 로봇을 움직입니다. 핀 번호는 사용하는 보드에 맞게 바꾸세요.</p>
+    <pre class="code" data-copy>let LEFT = AnalogPin.P1
+let RIGHT = AnalogPin.P2
+
+function drive(left: number, right: number) {
+    pins.analogWritePin(LEFT, left)
+    pins.analogWritePin(RIGHT, right)
+}
+
+bluetooth.onUartDataReceived(serial.delimiters(Delimiters.NewLine), function () {
+    let command = bluetooth.uartReadUntil(serial.delimiters(Delimiters.NewLine))
+
+    if (command == "forward") {
+        drive(600, 600)
+    } else if (command == "left") {
+        drive(0, 600)
+    } else if (command == "right") {
+        drive(600, 0)
+    } else {
+        // stop 또는 모르는 명령이면 무조건 정지 (안전)
+        drive(0, 0)
+    }
+})
+
+bluetooth.startUartService()
+basic.showString("BT")</pre>
+    <div class="notice" style="margin-bottom:0">
+      <b>안전 팁</b>: 모르는 명령이 오면 멈추도록 <code>else</code>에 정지를 넣어 두세요.
+      연결이 끊기면 웹앱이 인식을 자동으로 멈추지만, micro:bit는 마지막 명령을 계속 유지하기 때문입니다.
+    </div>
+  </section>
+
+  <section class="card reveal">
+    <h2>예제 3 — micro:bit가 웹으로 보내기 (양방향)</h2>
+    <p class="card__hint">
+      센서값을 웹앱의 <b>전송 기록</b>에 표시할 수 있습니다. 관찰·실험 수업에 활용해 보세요.
+    </p>
+    <pre class="code" data-copy>bluetooth.startUartService()
+basic.showString("BT")
+
+basic.forever(function () {
+    // 웹앱 기록창에 "light=123" 형태로 표시됨
+    bluetooth.uartWriteString("light=" + input.lightLevel() + "\n")
+    basic.pause(1000)
+})</pre>
+  </section>
+
+  <section class="card reveal" id="object">
+    <h2>예제 4 — 사물 위치 받기 (좌표 패킷)</h2>
+    <p class="card__hint">
+      <a href="../object.html">사물인식</a>의 <b>좌표 모드</b>가 보내는 <code>x200y150w080h060n02</code>를
+      숫자로 나눠 씁니다. 글자 하나 뒤에 숫자가 정해진 자릿수만큼 붙어 있어 <code>substr</code>로 자르면 됩니다.
+    </p>
+    <pre class="code" data-copy>// x200y150w080h060n02
+//  0123456789...        ← 글자 위치
+// x + 3자리, y + 3자리, w + 3자리, h + 3자리, n + 2자리
+
+bluetooth.onUartDataReceived(serial.delimiters(Delimiters.NewLine), function () {
+    let command = bluetooth.uartReadUntil(serial.delimiters(Delimiters.NewLine))
+
+    if (command == "stop") {
+        basic.clearScreen()
+        return
+    }
+
+    let cx = parseInt(command.substr(1, 3))    // 가로 중심 0~400
+    let cy = parseInt(command.substr(5, 3))    // 세로 중심 0~400
+    let w = parseInt(command.substr(9, 3))     // 상자 너비
+    let h = parseInt(command.substr(13, 3))    // 상자 높이
+    let count = parseInt(command.substr(17, 2))// 인식된 개수
+
+    // 사물이 화면 왼쪽/가운데/오른쪽 중 어디에 있는지 LED로 표시
+    if (cx &lt; 150) {
+        basic.showArrow(ArrowNames.West)
+    } else if (cx &gt; 250) {
+        basic.showArrow(ArrowNames.East)
+    } else {
+        basic.showIcon(IconNames.Target)
+    }
+})
+
+bluetooth.startUartService()
+basic.showString("BT")</pre>
+    <div class="keybox">
+      <b>이름 모드</b>로 바꾸면 <code>person</code>, <code>cup</code> 처럼 영문 이름이 그대로 오므로
+      예제 1처럼 문자열을 비교하면 됩니다.
+    </div>
+  </section>
+
+  <section class="card reveal" id="face">
+    <h2>예제 5 — 얼굴 값 받기 (얼굴 패킷)</h2>
+    <p class="card__hint">
+      <a href="../face.html">얼굴인식</a>이 보내는 <code>x50y42m30a90b88r5s2</code>를 나눠 씁니다.
+      위치·입·눈은 2자리, 기울기·미소는 1자리입니다.
+    </p>
+    <pre class="code" data-copy>// x50y42m30a90b88r5s2
+// x+2 y+2 m+2 a+2 b+2 r+1 s+1
+
+bluetooth.onUartDataReceived(serial.delimiters(Delimiters.NewLine), function () {
+    let command = bluetooth.uartReadUntil(serial.delimiters(Delimiters.NewLine))
+
+    if (command == "stop") {
+        basic.clearScreen()
+        return
+    }
+
+    let faceX = parseInt(command.substr(1, 2))   // 얼굴 좌우 위치 0~99
+    let faceY = parseInt(command.substr(4, 2))   // 얼굴 위아래 위치 0~99
+    let mouth = parseInt(command.substr(7, 2))   // 입 벌림 0~99
+    let eyeL = parseInt(command.substr(10, 2))   // 왼눈 열림 0~99
+    let eyeR = parseInt(command.substr(13, 2))   // 오른눈 열림 0~99
+    let roll = parseInt(command.substr(16, 1))   // 고개 기울기 0~9 (5=수평)
+    let smile = parseInt(command.substr(18, 1))  // 미소 0~9
+
+    if (mouth &gt; 40) {
+        basic.showIcon(IconNames.Surprised)      // 입을 벌리면
+    } else if (smile &gt;= 5) {
+        basic.showIcon(IconNames.Happy)          // 웃으면
+    } else if (eyeL &lt; 30 &amp;&amp; eyeR &lt; 30) {
+        basic.showIcon(IconNames.Asleep)         // 두 눈을 감으면
+    } else {
+        basic.showLeds(`
+            . . . . .
+            . # . # .
+            . . . . .
+            . . . . .
+            . . . . .
+            `)
+    }
+})
+
+bluetooth.startUartService()
+basic.showString("BT")</pre>
+  </section>
+
+  <section class="card reveal" id="streamer">
+    <h2>예제 6 — 센서값 보내기 (데이터 스트리머)</h2>
+    <p class="card__hint">
+      <a href="../streamer.html">데이터 스트리머</a>는 방향이 반대입니다.
+      micro:bit가 <b>보내고</b> 웹이 받아 그래프로 그립니다.
+    </p>
+    <pre class="code" data-copy>bluetooth.startUartService()
+basic.showString("BT")
+
+basic.forever(function () {
+    // 이름=값 형태로 보내면 계열별로 따로 그려집니다.
+    // 한 줄에 여러 개를 쉼표로 붙일 수도 있습니다.
+    bluetooth.uartWriteString(
+        "light=" + input.lightLevel() +
+        ",temp=" + input.temperature() + "
+")
+    basic.pause(200)
+})</pre>
+    <div class="keybox">
+      보내는 간격을 너무 짧게 하면(50ms 이하) 통신이 밀립니다. <b>200ms 정도</b>가 안정적입니다.
+      그래프는 계열 <b>4개</b>까지 표시하며, 그 이상은 화면에 알려주고 제외합니다.
+    </div>
+  </section>
+
+  <section class="card reveal">
+    <h2>잘 안 될 때</h2>
+    <div class="table-scroll">
+      <table class="mapping">
+        <thead><tr><th style="width:auto">증상</th><th style="width:auto">확인할 것</th></tr></thead>
+        <tbody>
+          <tr><td>기기 목록에 아무것도 안 뜸</td><td>micro:bit 전원이 켜져 있는지, 프로그램에 <code>bluetooth.startUartService()</code>가 있는지 확인</td></tr>
+          <tr><td>연결하자마자 끊김</td><td>프로젝트 설정에서 <b>No Pairing Required</b>가 켜져 있는지 확인</td></tr>
+          <tr><td>연결은 되는데 반응이 없음</td><td>예제 1로 바꿔서 LED에 어떤 글자가 뜨는지 확인 → 매핑 표의 명령어와 코드의 문자열이 정확히 같아야 함</td></tr>
+          <tr><td>다운로드가 실패함</td><td>micro:bit v1 메모리 부족. 쓰지 않는 확장 블록을 지우거나 v2 사용</td></tr>
+          <tr><td>연결 버튼이 비활성</td><td>Chrome/Edge가 아니거나 <code>http://</code>로 열었을 때. HTTPS 또는 localhost에서만 동작</td></tr>
+          <tr><td>좌표 값이 엉뚱하게 나옴</td><td><code>substr</code>의 시작 위치와 자릿수를 예제와 똑같이 맞췄는지 확인. 글자는 0번부터 셉니다</td></tr>
+          <tr><td>그래프가 안 그려짐</td><td>보내는 형식이 <code>이름=숫자</code>인지, 끝에 <code>
+</code>이 있는지 확인</td></tr>
+          <tr><td>글자가 깨져서 표시됨</td><td>명령어에 한글이 들어감. 영문·숫자로 바꾸기</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</div>
+
+<footer class="foot">수업·연구용 오픈소스 프로젝트 · Web Bluetooth + Teachable Machine</footer>
+
+<script src="../js/ui.js"></script>
+<script>
+  // 코드 블록에 복사 버튼 달기
+  document.querySelectorAll('pre.code[data-copy]').forEach(function (pre) {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn--ghost btn--sm code__copy';
+    btn.textContent = '복사';
+    btn.addEventListener('click', function () {
+      navigator.clipboard.writeText(pre.textContent).then(function () {
+        btn.textContent = '복사됨!';
+        setTimeout(function () { btn.textContent = '복사'; }, 1500);
+      });
+    });
+    pre.appendChild(btn);
+  });
+</script>
+</body>
+</html>

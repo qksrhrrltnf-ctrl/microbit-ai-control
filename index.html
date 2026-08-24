@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>micro:bit AI 제어</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body class="page-home">
+
+<header class="topbar">
+  <a class="topbar__brand" href="index.html"><span class="topbar__dot"></span>micro:bit AI 제어</a>
+  <span class="topbar__spacer"></span>
+  <nav>
+    <a href="image.html">이미지</a>
+    <a href="pose.html">포즈</a>
+    <a href="handpose.html">손모양</a>
+    <a href="object.html">사물</a>
+    <a href="face.html">얼굴</a>
+    <a href="voice.html">음성</a>
+    <a href="streamer.html">데이터</a>
+    <a href="microbit/">코드</a>
+  </nav>
+</header>
+
+<div class="wrap">
+
+  <div class="hero">
+    <h1><mark>AI 인식</mark>으로<br>micro:bit를 움직이세요</h1>
+    <p>
+      이미지·포즈·손모양·사물·얼굴·음성 <b>6가지 인식</b>과 <b>센서 데이터 그래프</b>까지.
+      모든 처리가 브라우저 안에서 일어나고, 인식 결과는 블루투스로 micro:bit에 전달됩니다.
+      설치도 회원가입도 필요 없습니다.
+    </p>
+  </div>
+
+  <div class="notice" id="envWarning" hidden></div>
+
+  <div class="app-grid">
+    <a class="app-card reveal" href="image.html">
+      <div class="app-card__icon">🖼️</div>
+      <h3>이미지 분류</h3>
+      <p>Teachable Machine에서 학습시킨 이미지 모델로 사물·카드·표지판을 분류합니다.</p>
+      <span class="app-card__tag">외부 학습 모델</span>
+    </a>
+
+    <a class="app-card reveal" href="pose.html">
+      <div class="app-card__icon">🙆</div>
+      <h3>포즈 분류</h3>
+      <p>온몸의 관절로 자세를 분류합니다. 만세·앉기·팔 뻗기로 로봇을 움직여 보세요.</p>
+      <span class="app-card__tag">외부 학습 모델</span>
+    </a>
+
+    <a class="app-card reveal" href="handpose.html">
+      <div class="app-card__icon">✋</div>
+      <h3>손모양 학습</h3>
+      <p>이 페이지 안에서 바로 손모양을 학습시킵니다. Teachable Machine이 필요 없습니다.</p>
+      <span class="app-card__tag">브라우저에서 학습</span>
+    </a>
+
+    <a class="app-card reveal" href="object.html">
+      <div class="app-card__icon">📸</div>
+      <h3>사물인식</h3>
+      <p>사람·컵·병 등 80종을 알아보고, 이름 또는 위치·크기 좌표를 보냅니다.</p>
+      <span class="app-card__tag">학습 불필요</span>
+    </a>
+
+    <a class="app-card reveal" href="face.html">
+      <div class="app-card__icon">😀</div>
+      <h3>얼굴인식</h3>
+      <p>얼굴 위치와 눈·입 벌림, 고개 기울기, 미소를 숫자로 읽어 보냅니다.</p>
+      <span class="app-card__tag">학습 불필요</span>
+    </a>
+
+    <a class="app-card reveal" href="voice.html">
+      <div class="app-card__icon">🎙️</div>
+      <h3>음성인식</h3>
+      <p>정해둔 말을 들으면 해당 명령을 보냅니다. 명령 목록은 CSV로 주고받을 수 있습니다.</p>
+      <span class="app-card__tag">학습 불필요</span>
+    </a>
+
+    <a class="app-card reveal" href="streamer.html">
+      <div class="app-card__icon">📈</div>
+      <h3>데이터 스트리머</h3>
+      <p>방향이 반대입니다 — micro:bit 센서값을 받아 실시간 그래프로 그리고 CSV로 내보냅니다.</p>
+      <span class="app-card__tag">micro:bit → 웹</span>
+    </a>
+
+    <a class="app-card reveal" href="microbit/">
+      <div class="app-card__icon">🧩</div>
+      <h3>micro:bit 쪽 코드</h3>
+      <p>기능별 MakeCode 예제와 통신 규약, 잘 안 될 때 확인할 것들을 모았습니다.</p>
+      <span class="app-card__tag">MakeCode</span>
+    </a>
+  </div>
+
+  <section class="card reveal" style="margin-top:36px">
+    <h2>처음 시작하기</h2>
+    <p class="card__hint">micro:bit 준비까지 15분이면 충분합니다.</p>
+    <ol class="steps">
+      <li><b>micro:bit 준비</b> — <a href="microbit/">micro:bit 코드 안내</a>의 예제를 MakeCode에 붙여넣고 다운로드한 뒤 전원을 켭니다. 프로젝트 설정에서 <b>No Pairing Required</b>를 꼭 켜주세요.</li>
+      <li><b>기능 고르기</b> — 학습이 필요 없는 <a href="object.html">사물인식</a>·<a href="face.html">얼굴인식</a>·<a href="voice.html">음성인식</a>부터 시작하면 가장 빠릅니다.</li>
+      <li><b>직접 학습해보기</b> — <a href="handpose.html">손모양 학습</a>은 브라우저에서 바로, <a href="image.html">이미지</a>·<a href="pose.html">포즈</a>는 <a href="https://teachablemachine.withgoogle.com/" target="_blank" rel="noopener">Teachable Machine</a>에서 학습한 모델을 불러옵니다.</li>
+      <li><b>연결하고 실행</b> — 카메라 → 블루투스 → 모델 순서로 진행하고 <b>시작</b>을 누릅니다. micro:bit가 없으면 <b>연습 모드</b>로 먼저 확인하세요.</li>
+    </ol>
+  </section>
+
+  <section class="card reveal">
+    <h2>준비물과 사용 환경</h2>
+    <p class="card__hint">micro:bit 하나와 카메라 달린 기기 하나면 됩니다.</p>
+    <ul>
+      <li><b>micro:bit</b> v1 또는 v2 (블루투스 내장) — 메모리 여유가 있는 v2 권장</li>
+      <li><b>카메라·마이크가 있는 기기</b> — 노트북, 크롬북, 안드로이드 태블릿·폰</li>
+      <li><b>브라우저</b> — Chrome 또는 Edge <span style="color:var(--ink-dim)">(Windows / macOS / Android / ChromeOS)</span></li>
+    </ul>
+    <div class="keybox" style="margin-top:18px">
+      <b>⚠️ iPhone·iPad의 Safari는 Web Bluetooth를 지원하지 않습니다.</b><br>
+      iOS에서는 <a href="https://apps.apple.com/app/id1492822055" target="_blank" rel="noopener">Bluefy</a> 브라우저로 열어주세요.
+      micro:bit가 없어도 <b>연습 모드</b>로 인식 결과와 전송될 명령을 미리 확인할 수 있습니다.
+    </div>
+  </section>
+
+  <section class="card reveal">
+    <h2>어떻게 동작하나요</h2>
+    <p class="card__hint">중간에 서버가 없습니다. 모든 처리가 브라우저 안에서 일어납니다.</p>
+    <pre class="diagram">
+ 카메라 / 마이크 ──▶ AI 인식 ──▶ 결과 + 확률
+                                    │
+                신뢰도 기준 · 연속 확인으로 걸러냄
+                                    │
+                      결과 → 명령어 매핑
+                                    │
+          Web Bluetooth (UART) ──▶ micro:bit</pre>
+    <p class="field__note">
+      촬영한 영상과 녹음된 음성은 어디에도 전송되지 않고 기기 안에서만 처리됩니다.
+      micro:bit로 나가는 것은 <code>rock</code> 같은 짧은 명령 문자열뿐입니다.
+      <span style="color:var(--ink-dim)">(음성인식만 브라우저 제공 서비스를 이용하므로 인터넷 연결이 필요합니다)</span>
+    </p>
+  </section>
+
+</div>
+
+<footer class="foot" data-credit>수업·연구용 오픈소스 프로젝트 · Web Bluetooth + on-device AI</footer>
+
+<script src="js/ui.js"></script>
+<script src="js/microbit-ble.js"></script>
+<script src="js/core.js"></script>
+<script>
+  Core.mountFooter();
+  Core.checkEnvironment();
+</script>
+</body>
+</html>

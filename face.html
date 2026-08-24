@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>얼굴인식 — micro:bit AI 제어</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-mode="face">
+
+<header class="topbar">
+  <a class="topbar__brand" href="index.html"><span class="topbar__dot"></span>micro:bit AI 제어</a>
+  <span class="topbar__title">얼굴인식</span>
+  <span class="topbar__spacer"></span>
+  <nav>
+    <a href="image.html">이미지</a>
+    <a href="pose.html">포즈</a>
+    <a href="handpose.html">손모양</a>
+    <a href="object.html">사물</a>
+    <a href="face.html" aria-current="page">얼굴</a>
+    <a href="voice.html">음성</a>
+    <a href="streamer.html">데이터</a>
+    <a href="microbit/">코드</a>
+  </nav>
+</header>
+
+<div class="wrap">
+  <div class="notice" id="envWarning" hidden></div>
+
+  <div class="layout">
+
+    <div class="stage-col">
+      <div class="card">
+        <canvas id="stage" width="400" height="400"></canvas>
+        <div class="predictions" id="predictions"></div>
+      </div>
+    </div>
+
+    <div>
+
+      <section class="card reveal">
+        <h2><span class="step">1</span> 카메라</h2>
+        <p class="card__hint">얼굴이 화면에 들어오게 맞춰주세요. 인식된 얼굴 윤곽과 눈 기울기 선이 함께 그려집니다.</p>
+        <div class="row">
+          <button type="button" class="btn btn--ghost" id="btnMirror" aria-pressed="true">좌우 반전</button>
+          <button type="button" class="btn btn--ghost" id="btnSwitchCam">전/후면 전환</button>
+          <span class="status" id="cameraStatus">대기 중</span>
+        </div>
+        <div class="row">
+          <span class="status" id="modelStatus">얼굴인식 모델 대기</span>
+        </div>
+      </section>
+
+      <section class="card reveal">
+        <h2><span class="step">2</span> micro:bit 연결</h2>
+        <p class="card__hint">micro:bit에 블루투스 프로그램을 넣고 전원을 켠 뒤 연결하세요. 기기가 없으면 연습 모드로 먼저 확인할 수 있습니다.</p>
+        <div class="row">
+          <button type="button" class="btn" id="btnConnect">블루투스 연결</button>
+          <button type="button" class="btn btn--ghost" id="btnDisconnect" disabled>연결 해제</button>
+        </div>
+        <div class="row">
+          <span class="status" id="bleStatus">연결 대기 중</span>
+        </div>
+        <div class="row">
+          <label class="switch"><input type="checkbox" id="chkSimulator"> 연습 모드 (micro:bit 없이 기록만)</label>
+        </div>
+      </section>
+
+      <section class="card reveal">
+        <h2><span class="step">3</span> 보낼 값 확인하기</h2>
+        <p class="card__hint">얼굴 상태를 숫자로 바꿔 한 줄로 보냅니다. 아래가 지금 이 순간 보낼 내용입니다.</p>
+
+        <div class="packet-now">
+          <span class="packet-now__label">지금 보낼 값</span>
+          <code id="packetNow">stop</code>
+        </div>
+
+        <div class="table-scroll" style="margin-top:16px">
+          <table class="mapping">
+            <thead><tr><th style="width:auto">글자</th><th style="width:auto">뜻</th><th style="width:auto">범위</th></tr></thead>
+            <tbody>
+              <tr><td><code>x</code></td><td>얼굴 중심 좌우 위치</td><td>00~99</td></tr>
+              <tr><td><code>y</code></td><td>얼굴 중심 위아래 위치</td><td>00~99</td></tr>
+              <tr><td><code>m</code></td><td>입 벌린 정도</td><td>00~99</td></tr>
+              <tr><td><code>a</code></td><td>왼눈 열린 정도</td><td>00~99</td></tr>
+              <tr><td><code>b</code></td><td>오른눈 열린 정도</td><td>00~99</td></tr>
+              <tr><td><code>r</code></td><td>고개 기울기 (5가 수평)</td><td>0~9</td></tr>
+              <tr><td><code>s</code></td><td>미소</td><td>0~9</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="keybox" style="margin-top:16px">
+          얼굴이 안 보이면 <code>stop</code>을 보냅니다.
+          micro:bit에서는 <code>substr</code>로 원하는 글자 다음 숫자만 잘라 쓰면 됩니다 —
+          <a href="microbit/#face">예제 보기</a>
+        </div>
+
+        <div class="field" style="margin-top:18px">
+          <div class="slider-label"><label for="sendInterval">전송 간격</label><span id="sendIntervalValue">200ms</span></div>
+          <input type="range" id="sendInterval" min="100" max="1000" step="50" value="200">
+          <p class="field__note">얼굴 값은 계속 바뀌므로 이 간격으로 보냅니다. 너무 짧으면 통신이 밀립니다.</p>
+        </div>
+
+        <div class="field">
+          <label class="switch"><input type="checkbox" id="chkMesh" checked> 얼굴 윤곽점 표시</label>
+        </div>
+
+        <div class="row">
+          <button type="button" class="btn" id="btnStart" disabled>전송 시작</button>
+          <button type="button" class="btn btn--danger" id="btnStop" disabled>전송 중지</button>
+        </div>
+
+        <div class="row">
+          <span class="status" id="saveStatus">자동 저장 켜짐</span>
+          <button type="button" class="btn btn--ghost btn--sm" id="btnClearSaved">저장 내용 지우기</button>
+        </div>
+      </section>
+
+      <section class="card reveal">
+        <h2>전송 기록</h2>
+        <p class="card__hint">무엇이 언제 전송됐는지 확인할 수 있습니다. 수업 중 문제가 생기면 여기부터 보세요.</p>
+        <ul class="log" id="log"></ul>
+        <div class="row" style="margin-top:12px">
+          <button type="button" class="btn btn--ghost btn--sm" id="btnClearLog">기록 지우기</button>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<footer class="foot" data-credit>수업·연구용 오픈소스 프로젝트 · Web Bluetooth + on-device AI</footer>
+
+<script src="js/ui.js"></script>
+<script src="js/store.js"></script>
+<script src="js/microbit-ble.js"></script>
+<script src="js/core.js"></script>
+<script src="js/face.js"></script>
+</body>
+</html>

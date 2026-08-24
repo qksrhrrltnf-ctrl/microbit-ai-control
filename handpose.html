@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>손모양 학습 — micro:bit AI 제어</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-mode="handpose">
+
+<header class="topbar">
+  <a class="topbar__brand" href="index.html"><span class="topbar__dot"></span>micro:bit AI 제어</a>
+  <span class="topbar__title">손모양 학습</span>
+  <span class="topbar__spacer"></span>
+  <nav>
+    <a href="image.html">이미지</a>
+    <a href="pose.html">포즈</a>
+    <a href="handpose.html" aria-current="page">손모양</a>
+    <a href="object.html">사물</a>
+    <a href="face.html">얼굴</a>
+    <a href="voice.html">음성</a>
+    <a href="streamer.html">데이터</a>
+    <a href="microbit/">코드</a>
+  </nav>
+</header>
+
+<div class="wrap">
+  <div class="notice" id="envWarning" hidden></div>
+
+  <div class="layout">
+
+    <div class="stage-col">
+      <div class="card">
+        <canvas id="stage" width="400" height="400"></canvas>
+        <div class="predictions" id="predictions"></div>
+      </div>
+    </div>
+
+    <div>
+
+      <section class="card reveal">
+        <h2><span class="step">1</span> 카메라</h2>
+        <p class="card__hint">손 하나가 화면에 잘 들어오게 맞춰주세요. 인식된 관절이 화면에 함께 그려집니다.</p>
+        <div class="row">
+          <button type="button" class="btn btn--ghost" id="btnMirror" aria-pressed="true">좌우 반전</button>
+          <button type="button" class="btn btn--ghost" id="btnSwitchCam">전/후면 전환</button>
+          <span class="status" id="cameraStatus">대기 중</span>
+        </div>
+        <div class="row">
+          <span class="status" id="modelStatus">손 인식 모델 대기</span>
+        </div>
+      </section>
+
+      <section class="card reveal">
+        <h2><span class="step">2</span> micro:bit 연결</h2>
+        <p class="card__hint">micro:bit에 블루투스 프로그램을 넣고 전원을 켠 뒤 연결하세요. 기기가 없으면 연습 모드로 먼저 확인할 수 있습니다.</p>
+        <div class="row">
+          <button type="button" class="btn" id="btnConnect">블루투스 연결</button>
+          <button type="button" class="btn btn--ghost" id="btnDisconnect" disabled>연결 해제</button>
+        </div>
+        <div class="row">
+          <span class="status" id="bleStatus">연결 대기 중</span>
+        </div>
+        <div class="row">
+          <label class="switch"><input type="checkbox" id="chkSimulator"> 연습 모드 (micro:bit 없이 기록만)</label>
+        </div>
+      </section>
+
+      <section class="card reveal">
+        <h2><span class="step">3</span> 손모양 학습</h2>
+        <div class="keybox" style="margin-bottom:18px">
+          <b>Teachable Machine이 필요 없습니다.</b> 이 페이지 안에서 바로 학습합니다.<br>
+          손모양 이름을 추가하고 → 그 손모양을 카메라에 보인 채 → <b>누르고 있기</b>를 눌러 샘플을 모으세요.
+          한 손모양당 <b>30개 이상</b>이면 충분합니다.
+        </div>
+
+        <div class="row" style="margin-bottom:14px">
+          <input type="text" id="newClass" placeholder="손모양 이름 (예: 주먹)" style="flex:1 1 180px">
+          <button type="button" class="btn" id="btnAddClass">추가</button>
+          <button type="button" class="btn btn--ghost" id="btnPreset">가위바위보 만들기</button>
+        </div>
+
+        <div class="table-scroll">
+          <table class="mapping">
+            <thead>
+              <tr><th>손모양</th><th>샘플</th><th>담기</th><th></th><th></th></tr>
+            </thead>
+            <tbody id="classBody"></tbody>
+          </table>
+        </div>
+
+        <div class="row" style="margin-top:14px">
+          <span class="status" id="trainStatus">클래스를 추가해주세요</span>
+          <span class="status" id="saveStatus">자동 저장 켜짐</span>
+        </div>
+
+        <div class="keybox" style="margin-top:16px">
+          <b>학습한 내용은 이 브라우저에 자동으로 저장됩니다.</b>
+          새로고침하거나 다음 시간에 다시 열어도 그대로 남아 있습니다.<br>
+          한 번 학습한 뒤 <b>파일로 내보내기</b> 하면, 다른 사람은 학습 없이 <b>불러오기</b>만으로 똑같이 쓸 수 있습니다.
+        </div>
+
+        <div class="row" style="margin-top:14px">
+          <button type="button" class="btn btn--ghost btn--sm" id="btnExportTraining">파일로 내보내기</button>
+          <button type="button" class="btn btn--ghost btn--sm" id="btnImportTraining">파일 불러오기</button>
+          <button type="button" class="btn btn--ghost btn--sm" id="btnClearSaved">저장 내용 지우기</button>
+          <input type="file" id="trainingFile" accept=".json,application/json" hidden>
+        </div>
+      </section>
+
+      <section class="card reveal" id="mappingSection" hidden>
+        <h2><span class="step">4</span> 손모양 &rarr; 명령 연결</h2>
+        <p class="card__hint">
+          각 손모양을 인식했을 때 micro:bit로 보낼 <b>명령어</b>를 정합니다.
+          이름은 한글로 두고 명령만 영문·숫자로 지으면 됩니다.
+        </p>
+        <div class="table-scroll">
+          <table class="mapping">
+            <thead>
+              <tr><th>사용</th><th>손모양</th><th>보낼 명령</th><th></th></tr>
+            </thead>
+            <tbody id="mappingBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card reveal">
+        <h2><span class="step">5</span> 인식 설정 &amp; 실행</h2>
+
+        <div class="field">
+          <div class="slider-label"><label for="threshold">신뢰도 기준</label><span id="thresholdValue">60%</span></div>
+          <input type="range" id="threshold" min="10" max="99" value="60">
+          <p class="field__note">가까운 샘플 5개 중 몇 표를 받아야 인정할지 정합니다. 60%면 5개 중 3표입니다.</p>
+        </div>
+
+        <div class="field">
+          <div class="slider-label"><label for="stability">연속 확인</label><span id="stabilityValue">4회</span></div>
+          <input type="range" id="stability" min="1" max="15" value="4">
+          <p class="field__note">같은 결과가 이만큼 연속으로 나와야 확정합니다. 결과가 깜빡이면 올리세요.</p>
+        </div>
+
+        <div class="field">
+          <label for="sendMode">전송 방식</label>
+          <select id="sendMode">
+            <option value="change">결과가 바뀔 때만 보내기 (권장)</option>
+            <option value="repeat">인식하는 동안 계속 보내기</option>
+          </select>
+        </div>
+
+        <div class="field" id="repeatRow" hidden>
+          <div class="slider-label"><label for="repeatInterval">반복 간격</label><span id="repeatValue">500ms</span></div>
+          <input type="range" id="repeatInterval" min="150" max="2000" step="50" value="500">
+        </div>
+
+        <div class="row">
+          <button type="button" class="btn" id="btnStart" disabled>분류 시작</button>
+          <button type="button" class="btn btn--danger" id="btnStop" disabled>분류 중지</button>
+        </div>
+      </section>
+
+      <section class="card reveal">
+        <h2>전송 기록</h2>
+        <p class="card__hint">무엇이 언제 전송됐는지 확인할 수 있습니다. 수업 중 문제가 생기면 여기부터 보세요.</p>
+        <ul class="log" id="log"></ul>
+        <div class="row" style="margin-top:12px">
+          <button type="button" class="btn btn--ghost btn--sm" id="btnClearLog">기록 지우기</button>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<footer class="foot" data-credit>수업·연구용 오픈소스 프로젝트 · Web Bluetooth + on-device AI</footer>
+
+<script src="js/ui.js"></script>
+<script src="js/store.js"></script>
+<script src="js/microbit-ble.js"></script>
+<script src="js/core.js"></script>
+<script src="js/knn.js"></script>
+<script src="js/handpose.js"></script>
+</body>
+</html>

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>음성인식 — micro:bit AI 제어</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-mode="voice">
+
+<header class="topbar">
+  <a class="topbar__brand" href="index.html"><span class="topbar__dot"></span>micro:bit AI 제어</a>
+  <span class="topbar__title">음성인식</span>
+  <span class="topbar__spacer"></span>
+  <nav>
+    <a href="image.html">이미지</a>
+    <a href="pose.html">포즈</a>
+    <a href="handpose.html">손모양</a>
+    <a href="object.html">사물</a>
+    <a href="face.html">얼굴</a>
+    <a href="voice.html" aria-current="page">음성</a>
+    <a href="streamer.html">데이터</a>
+    <a href="microbit/">코드</a>
+  </nav>
+</header>
+
+<div class="wrap">
+  <div class="notice" id="envWarning" hidden></div>
+
+  <div class="layout">
+
+    <!-- 왼쪽: 인식 결과 -->
+    <div class="stage-col">
+      <div class="card">
+        <div class="voice-stage">
+          <div class="voice-stage__mic" id="micIndicator">🎙️</div>
+          <div class="voice-stage__heard" id="heard">마이크를 켜고 말해보세요</div>
+          <div class="voice-stage__interim" id="interim"></div>
+        </div>
+        <div class="voice-hits" id="voiceHits"></div>
+      </div>
+    </div>
+
+    <!-- 오른쪽: 조작 -->
+    <div>
+
+      <section class="card reveal">
+        <h2><span class="step">1</span> 마이크</h2>
+        <p class="card__hint">인식할 언어를 고르고 마이크를 켜세요. 브라우저가 마이크 권한을 물어봅니다.</p>
+
+        <div class="field">
+          <label for="langSelect">인식 언어</label>
+          <select id="langSelect">
+            <option value="ko-KR">한국어</option>
+            <option value="en-US">English (US)</option>
+            <option value="ja-JP">日本語</option>
+          </select>
+        </div>
+
+        <div class="row">
+          <button type="button" class="btn" id="btnListen">마이크 켜기</button>
+          <button type="button" class="btn btn--danger" id="btnStopListen" disabled>마이크 끄기</button>
+        </div>
+        <div class="row">
+          <span class="status" id="micStatus">대기 중</span>
+        </div>
+      </section>
+
+      <section class="card reveal">
+        <h2><span class="step">2</span> micro:bit 연결</h2>
+        <p class="card__hint">micro:bit에 블루투스 프로그램을 넣고 전원을 켠 뒤 연결하세요. 기기가 없으면 연습 모드로 먼저 확인할 수 있습니다.</p>
+        <div class="row">
+          <button type="button" class="btn" id="btnConnect">블루투스 연결</button>
+          <button type="button" class="btn btn--ghost" id="btnDisconnect" disabled>연결 해제</button>
+        </div>
+        <div class="row">
+          <span class="status" id="bleStatus">연결 대기 중</span>
+        </div>
+        <div class="row">
+          <label class="switch"><input type="checkbox" id="chkSimulator"> 연습 모드 (micro:bit 없이 기록만)</label>
+        </div>
+      </section>
+
+      <section class="card reveal">
+        <h2><span class="step">3</span> 명령어 등록</h2>
+        <p class="card__hint">
+          어떤 <b>말</b>을 들으면 어떤 <b>명령</b>을 보낼지 정합니다.
+          말은 한글로 적어도 되고, micro:bit로 나가는 명령만 영문·숫자로 두면 됩니다.
+        </p>
+
+        <div class="row" style="margin-bottom:14px">
+          <input type="text" id="newWord" placeholder="들을 말 (예: 앞으로)" style="flex:1 1 150px">
+          <input type="text" id="newCommand" placeholder="보낼 명령 (예: forward)" maxlength="18" style="flex:1 1 150px">
+          <button type="button" class="btn" id="btnAddWord">추가</button>
+        </div>
+
+        <div class="table-scroll">
+          <table class="mapping">
+            <thead>
+              <tr><th>사용</th><th>들을 말</th><th>보낼 명령</th><th></th><th></th></tr>
+            </thead>
+            <tbody id="wordBody"></tbody>
+          </table>
+        </div>
+
+        <div class="row" style="margin-top:14px">
+          <span class="status" id="saveStatus">자동 저장 켜짐</span>
+          <button type="button" class="btn btn--ghost btn--sm" id="btnClearSaved">저장 내용 지우기</button>
+        </div>
+
+        <div class="row" style="margin-top:10px">
+          <button type="button" class="btn btn--ghost btn--sm" id="btnPreset">예시 채우기</button>
+          <button type="button" class="btn btn--ghost btn--sm" id="btnExportCsv">CSV 내보내기</button>
+          <button type="button" class="btn btn--ghost btn--sm" id="btnImportCsv">CSV 불러오기</button>
+          <input type="file" id="csvFile" accept=".csv,text/csv" hidden>
+        </div>
+        <p class="field__note">CSV 형식: 첫 줄은 <code>말,명령</code>, 그 아래에 한 줄씩.</p>
+      </section>
+
+      <section class="card reveal">
+        <h2><span class="step">4</span> 인식 설정</h2>
+
+        <div class="field">
+          <label for="matchMode">말 맞추는 방법</label>
+          <select id="matchMode">
+            <option value="include">문장에 그 말이 들어있으면 (권장)</option>
+            <option value="exact">문장이 그 말과 정확히 같을 때만</option>
+          </select>
+          <p class="field__note">
+            &ldquo;들어있으면&rdquo;은 &ldquo;로봇 앞으로 가&rdquo; 처럼 말해도 <code>앞으로</code>를 잡아냅니다.
+          </p>
+        </div>
+
+        <div class="field">
+          <div class="slider-label"><label for="cooldown">같은 명령 재전송 간격</label><span id="cooldownValue">1000ms</span></div>
+          <input type="range" id="cooldown" min="0" max="5000" step="100" value="1000">
+          <p class="field__note">같은 말이 연달아 인식돼도 이 시간 안에는 다시 보내지 않습니다.</p>
+        </div>
+
+        <div class="field">
+          <label class="switch"><input type="checkbox" id="chkAutoRestart" checked> 말이 끊겨도 계속 듣기</label>
+          <p class="field__note">브라우저가 조용할 때 마이크를 끊는 것을 자동으로 다시 켭니다.</p>
+        </div>
+      </section>
+
+      <section class="card reveal">
+        <h2>전송 기록</h2>
+        <p class="card__hint">무엇이 언제 전송됐는지 확인할 수 있습니다. 수업 중 문제가 생기면 여기부터 보세요.</p>
+        <ul class="log" id="log"></ul>
+        <div class="row" style="margin-top:12px">
+          <button type="button" class="btn btn--ghost btn--sm" id="btnClearLog">기록 지우기</button>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<footer class="foot" data-credit>수업·연구용 오픈소스 프로젝트 · Web Bluetooth + on-device AI</footer>
+
+<script src="js/ui.js"></script>
+<script src="js/store.js"></script>
+<script src="js/microbit-ble.js"></script>
+<script src="js/core.js"></script>
+<script src="js/voice.js"></script>
+</body>
+</html>

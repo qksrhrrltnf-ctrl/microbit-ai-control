@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>데이터 스트리머 — micro:bit AI 제어</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-mode="streamer">
+
+<header class="topbar">
+  <a class="topbar__brand" href="index.html"><span class="topbar__dot"></span>micro:bit AI 제어</a>
+  <span class="topbar__title">데이터 스트리머</span>
+  <span class="topbar__spacer"></span>
+  <nav>
+    <a href="image.html">이미지</a>
+    <a href="pose.html">포즈</a>
+    <a href="handpose.html">손모양</a>
+    <a href="object.html">사물</a>
+    <a href="face.html">얼굴</a>
+    <a href="voice.html">음성</a>
+    <a href="streamer.html" aria-current="page">데이터</a>
+    <a href="microbit/">코드</a>
+  </nav>
+</header>
+
+<div class="wrap" style="max-width:1000px">
+  <div class="notice" id="envWarning" hidden></div>
+
+  <section class="card reveal">
+    <h2><span class="step">1</span> micro:bit 연결</h2>
+    <p class="card__hint">
+      이 페이지는 방향이 반대입니다 — <b>micro:bit가 보내는 값을 웹이 받아</b> 그래프로 그립니다.
+      micro:bit에서 <code>bluetooth.uartWriteString("light=" + input.lightLevel() + "\n")</code> 처럼 보내주세요.
+    </p>
+    <div class="row">
+      <button type="button" class="btn" id="btnConnect">블루투스 연결</button>
+      <button type="button" class="btn btn--ghost" id="btnDisconnect" disabled>연결 해제</button>
+      <button type="button" class="btn btn--accent" id="btnDemo" aria-pressed="false">연습 데이터 시작</button>
+    </div>
+    <div class="row">
+      <span class="status" id="bleStatus">연결 대기 중</span>
+      <span class="status" id="dataStatus">데이터 대기 중</span>
+    </div>
+    <div class="keybox" style="margin-top:16px">
+      받는 형식: <code>light=123</code> · 한 줄에 여러 개 <code>light=123,temp=25</code> ·
+      이름 없이 <code>123</code>만 보내면 <code>value</code>로 저장됩니다.
+      micro:bit 없이 확인하려면 <b>연습 데이터</b>를 눌러보세요.
+    </div>
+  </section>
+
+  <section class="card reveal">
+    <h2><span class="step">2</span> 실시간 그래프</h2>
+    <p class="card__hint">
+      센서마다 값의 범위가 다르므로(조도 0~255, 온도 0~50) 한 축에 겹치지 않고
+      <b>계열별로 따로</b> 그립니다. 그래프에 마우스를 올리면 그 시점 값을 볼 수 있습니다.
+    </p>
+
+    <div id="charts" class="charts"></div>
+
+    <div class="field" style="margin-top:20px">
+      <div class="slider-label"><label for="windowSize">화면에 보일 표본 수</label><span id="windowSizeValue">200개</span></div>
+      <input type="range" id="windowSize" min="20" max="600" step="20" value="200">
+    </div>
+
+    <div class="row">
+      <button type="button" class="btn btn--ghost" id="btnPause" aria-pressed="false">잠시 멈추기</button>
+      <button type="button" class="btn btn--ghost" id="btnToggleTable">표로 보기</button>
+      <button type="button" class="btn" id="btnExportCsv">CSV 내보내기</button>
+      <button type="button" class="btn btn--danger" id="btnClearData">데이터 지우기</button>
+    </div>
+
+    <div id="tableWrap" class="table-scroll" style="margin-top:18px" hidden>
+      <table class="mapping" id="dataTable"></table>
+    </div>
+  </section>
+
+  <section class="card reveal">
+    <h2>수신 기록</h2>
+    <p class="card__hint">받은 줄과 연결 상태가 그대로 남습니다. 값이 안 그려지면 여기서 형식을 확인하세요.</p>
+    <ul class="log" id="log"></ul>
+    <div class="row" style="margin-top:12px">
+      <button type="button" class="btn btn--ghost btn--sm" id="btnClearLog">기록 지우기</button>
+    </div>
+  </section>
+
+</div>
+
+<footer class="foot" data-credit>수업·연구용 오픈소스 프로젝트 · Web Bluetooth + on-device AI</footer>
+
+<script src="js/ui.js"></script>
+<script src="js/store.js"></script>
+<script src="js/microbit-ble.js"></script>
+<script src="js/core.js"></script>
+<script src="js/streamer.js"></script>
+</body>
+</html>

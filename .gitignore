@@ -1,0 +1,21 @@
+# OS
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+
+# 편집기
+.vscode/
+.idea/
+*.swp
+
+# 임시
+*.log
+.tmp/
+
+# 저장소에 올리지 않는 참고 문서 (로컬 보관)
+ANALYSIS.md
+design.md
+
+# 검증용 스크린샷 (프로젝트 산출물 아님)
+shot_*.png
